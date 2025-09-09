@@ -11,11 +11,11 @@ import (
 )
 
 func TestPrintEligibleResources(t *testing.T) {
-	PrintEligibleResources(pim.EligibleResourceAssignmentsDummyData)
+	PrintEligibleResources(GetEligibleResources(pim.EligibleResourceAssignmentsDummyData))
 }
 
 func TestPrintEligibleGovernanceRoles(t *testing.T) {
-	PrintEligibleGovernanceRoles(pim.EligibleGovernanceRoleAssignmentsDummyData)
+	PrintEligibleGovernanceRoles(GetEligibleGovernanceRoles(pim.EligibleGovernanceRoleAssignmentsDummyData))
 }
 
 func TestGetResourceAssignment(t *testing.T) {

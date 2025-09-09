@@ -13,7 +13,7 @@ import (
 	"github.com/netr0m/az-pim-cli/pkg/pim"
 )
 
-func PrintEligibleResources(resourceAssignments *pim.ResourceAssignmentResponse) {
+func GetEligibleResources(resourceAssignments *pim.ResourceAssignmentResponse) map[string][]string {
 	var eligibleResources = make(map[string][]string)
 
 	for _, ras := range resourceAssignments.Value {
@@ -25,16 +25,19 @@ func PrintEligibleResources(resourceAssignments *pim.ResourceAssignmentResponse)
 		}
 		eligibleResources[resourceName] = append(eligibleResources[resourceName], roleName)
 	}
+	return eligibleResources
+}
 
+func PrintEligibleResources(eligibleResources map[string][]string) {
 	for sub, rol := range eligibleResources {
 		fmt.Printf("== %s ==\n", sub)
-		for role := range rol {
-			fmt.Printf("\t - %s\n", rol[role])
+		for _, role := range rol {
+			fmt.Printf("\t - %s\n", role)
 		}
 	}
 }
 
-func PrintEligibleGovernanceRoles(governanceRoleAssignments *pim.GovernanceRoleAssignmentResponse) {
+func GetEligibleGovernanceRoles(governanceRoleAssignments *pim.GovernanceRoleAssignmentResponse) map[string][]string {
 	var eligibleGovernanceRoles = make(map[string][]string)
 
 	for _, governanceRoleAssignment := range governanceRoleAssignments.Value {
@@ -46,11 +49,14 @@ func PrintEligibleGovernanceRoles(governanceRoleAssignments *pim.GovernanceRoleA
 		}
 		eligibleGovernanceRoles[governanceRoleName] = append(eligibleGovernanceRoles[governanceRoleName], roleName)
 	}
+	return eligibleGovernanceRoles
+}
 
-	for govRole, rol := range eligibleGovernanceRoles {
+func PrintEligibleGovernanceRoles(eligibleGovernanceRoles map[string][]string) {
+	for govRole, roles := range eligibleGovernanceRoles {
 		fmt.Printf("== %s ==\n", govRole)
-		for role := range rol {
-			fmt.Printf("\t - %s\n", rol[role])
+		for _, role := range roles {
+			fmt.Printf("\t - %s\n", role)
 		}
 	}
 }
@@ -131,4 +137,14 @@ func GetGovernanceRoleAssignment(name string, prefix string, role string, eligib
 	os.Exit(1)
 
 	return nil
+}
+
+func GetMapKeys(m map[string][]string) []string {
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	return keys
 }

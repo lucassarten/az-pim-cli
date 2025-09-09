@@ -8,6 +8,7 @@ import (
 
 	"log/slog"
 
+	"github.com/manifoldco/promptui"
 	"github.com/netr0m/az-pim-cli/pkg/pim"
 	"github.com/netr0m/az-pim-cli/pkg/utils"
 	"github.com/spf13/cobra"
@@ -25,6 +26,24 @@ var ticketNumber string
 var dryRun bool
 var validateOnly bool
 
+var eligibleResourcesTemplate = &promptui.SelectTemplates{
+	Active:   `➤ {{ .Properties.ExpandedProperties.Scope.DisplayName | cyan }}`,
+	Inactive: `  {{ .Properties.ExpandedProperties.Scope.DisplayName | cyan }}`,
+	Selected: `✓ {{ .Properties.ExpandedProperties.Scope.DisplayName | green }}`,
+}
+
+var eligibleGovernanceResourcesTemplate = &promptui.SelectTemplates{
+	Active:   `➤ {{ .RoleDefinition.Resource.DisplayName | cyan }}`,
+	Inactive: `  {{ .RoleDefinition.Resource.DisplayName | cyan }}`,
+	Selected: `✓ {{ .RoleDefinition.Resource.DisplayName | green }}`,
+}
+
+var eligibleRolesTemplate = &promptui.SelectTemplates{
+	Active:   `➤ {{ . | cyan }}`,
+	Inactive: `  {{ . | cyan }}`,
+	Selected: `✓ {{ . | green }}`,
+}
+
 var activateCmd = &cobra.Command{
 	Use:     "activate",
 	Aliases: []string{"a", "ac", "act"},
@@ -41,6 +60,37 @@ var activateResourceCmd = &cobra.Command{
 		subjectId := pim.GetUserInfo(token).ObjectId
 
 		eligibleResourceAssignments := pim.GetEligibleResourceAssignments(token, pim.AzureClient{})
+
+		if name == "" && prefix == "" {
+			prompt := promptui.Select{
+				Label:     "Select Resource",
+				Items:     eligibleResourceAssignments,
+				Templates: eligibleResourcesTemplate,
+			}
+			idxResource, _, err := prompt.Run()
+			if err != nil {
+				slog.Error("Prompt failed", "error", err)
+				os.Exit(1)
+			}
+			name = eligibleResourceAssignments.Value[idxResource].Properties.ExpandedProperties.Scope.DisplayName
+		}
+
+		if roleName == "" {
+			eligibleResourceToRoles := utils.GetEligibleResources(eligibleResourceAssignments)
+
+			rolePrompt := promptui.Select{
+				Label:     "Select Role",
+				Items:     eligibleResourceToRoles[name],
+				Templates: eligibleRolesTemplate,
+			}
+			idxRole, _, err := rolePrompt.Run()
+			if err != nil {
+				slog.Error("Role prompt failed", "error", err)
+				os.Exit(1)
+			}
+			roleName = eligibleResourceToRoles[name][idxRole]
+		}
+
 		resourceAssignment := utils.GetResourceAssignment(name, prefix, roleName, eligibleResourceAssignments)
 		scope, assignmentRequest := pim.CreateResourceAssignmentRequest(subjectId, resourceAssignment, duration, startDate, startTime, reason, ticketSystem, ticketNumber)
 
@@ -84,6 +134,37 @@ func activateGovernanceRole(roleType string) {
 	}
 	subjectId := pim.GetUserInfo(pimGovernanceRoleToken).ObjectId
 	eligibleAssignments := pim.GetEligibleGovernanceRoleAssignments(roleType, subjectId, pimGovernanceRoleToken, pim.AzureClient{})
+
+	if name == "" && prefix == "" {
+		prompt := promptui.Select{
+			Label:     "Select Resource",
+			Items:     eligibleAssignments,
+			Templates: eligibleGovernanceResourcesTemplate,
+		}
+		idxResource, _, err := prompt.Run()
+		if err != nil {
+			slog.Error("Prompt failed", "error", err)
+			os.Exit(1)
+		}
+		name = eligibleAssignments.Value[idxResource].RoleDefinition.Resource.DisplayName
+	}
+
+	if roleName == "" {
+		eligibleResourceToRoles := utils.GetEligibleGovernanceRoles(eligibleAssignments)
+
+		rolePrompt := promptui.Select{
+			Label:     "Select Role",
+			Items:     eligibleResourceToRoles[name],
+			Templates: eligibleRolesTemplate,
+		}
+		idxRole, _, err := rolePrompt.Run()
+		if err != nil {
+			slog.Error("Role prompt failed", "error", err)
+			os.Exit(1)
+		}
+		roleName = eligibleResourceToRoles[name][idxRole]
+	}
+
 	roleAssignment := utils.GetGovernanceRoleAssignment(name, prefix, roleName, eligibleAssignments)
 	roleType, assignmentRequest := pim.CreateGovernanceRoleAssignmentRequest(subjectId, roleType, roleAssignment, duration, startDate, startTime, reason, ticketSystem, ticketNumber)
 
@@ -163,6 +244,5 @@ func init() {
 	activateEntraRoleCmd.PersistentFlags().StringVarP(&pimGovernanceRoleToken, "token", "t", "", "An access token for the PIM 'Entra Roles' and 'Groups' API (required). Consult the README for more information.")
 	activateEntraRoleCmd.MarkPersistentFlagRequired("token") //nolint:errcheck
 
-	activateCmd.MarkFlagsOneRequired("name", "prefix")
 	activateCmd.MarkFlagsMutuallyExclusive("name", "prefix")
 }

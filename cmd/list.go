@@ -24,7 +24,7 @@ var listResourceCmd = &cobra.Command{
 		token := pim.GetAccessToken(pim.AZ_PIM_SCOPE, pim.AzureClient{})
 
 		eligibleResourceAssignments := pim.GetEligibleResourceAssignments(token, pim.AzureClient{})
-		utils.PrintEligibleResources(eligibleResourceAssignments)
+		utils.PrintEligibleResources(utils.GetEligibleResources(eligibleResourceAssignments))
 	},
 }
 
@@ -35,7 +35,7 @@ var listGroupCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		subjectId := pim.GetUserInfo(pimGovernanceRoleToken).ObjectId
 		eligibleGroupAssignments := pim.GetEligibleGovernanceRoleAssignments(pim.ROLE_TYPE_AAD_GROUPS, subjectId, pimGovernanceRoleToken, pim.AzureClient{})
-		utils.PrintEligibleGovernanceRoles(eligibleGroupAssignments)
+		utils.PrintEligibleGovernanceRoles(utils.GetEligibleGovernanceRoles(eligibleGroupAssignments))
 	},
 }
 
@@ -46,7 +46,7 @@ var listEntraRoleCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		subjectId := pim.GetUserInfo(pimGovernanceRoleToken).ObjectId
 		eligibleEntraRoleAssignments := pim.GetEligibleGovernanceRoleAssignments(pim.ROLE_TYPE_ENTRA_ROLES, subjectId, pimGovernanceRoleToken, pim.AzureClient{})
-		utils.PrintEligibleGovernanceRoles(eligibleEntraRoleAssignments)
+		utils.PrintEligibleGovernanceRoles(utils.GetEligibleGovernanceRoles(eligibleEntraRoleAssignments))
 	},
 }
 
