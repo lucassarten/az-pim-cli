@@ -6,23 +6,18 @@ package common
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 func InitLogger(debugLogging bool) {
-	lvl := new(slog.LevelVar)
+	logrus.AddHook(&Hook{})
 	if debugLogging {
-		lvl.Set(slog.LevelDebug)
+		logrus.SetLevel(logrus.DebugLevel)
 	} else {
-		lvl.Set(slog.LevelInfo)
+		logrus.SetLevel(logrus.InfoLevel)
 	}
-
-	_handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: lvl})
-	logger := slog.New(_handler)
-
-	slog.SetDefault(logger)
 }
 
 func (e *Error) Unwrap() error { return e.Err }
@@ -45,4 +40,22 @@ func (e *Error) Debug() string {
 	}
 
 	return strings.Join(debugLines, "\n")
+}
+
+type Hook struct{}
+
+func (h *Hook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+func (h *Hook) Fire(e *logrus.Entry) error {
+	for k, v := range e.Data {
+		if s, ok := v.(string); ok {
+			if s == "" {
+				delete(e.Data, k)
+				continue
+			}
+		}
+	}
+	return nil
 }

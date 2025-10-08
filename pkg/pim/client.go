@@ -9,9 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
-	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -43,8 +43,7 @@ func (c AzureClient) GetAccessToken(scope string) string {
 			Message:   err.Error(),
 			Err:       err,
 		}
-		slog.Error(_error.Error())
-		os.Exit(1)
+		log.Fatal(_error.Error())
 	}
 	tokenOpts := policy.TokenRequestOptions{
 		Scopes: []string{
@@ -59,8 +58,7 @@ func (c AzureClient) GetAccessToken(scope string) string {
 			Status:    "401",
 			Err:       err,
 		}
-		slog.Error(_error.Error())
-		os.Exit(1)
+		log.Fatal(_error.Error())
 	}
 
 	return token.Token
@@ -79,8 +77,7 @@ func GetUserInfo(token string) AzureUserInfo {
 			Message:   err.Error(),
 			Err:       err,
 		}
-		slog.Error(_error.Error())
-		os.Exit(1)
+		log.Fatal(_error.Error())
 	}
 
 	// Parse claims
@@ -93,9 +90,8 @@ func handleRequestErr(_error *common.Error, err error, req *http.Request) {
 	_error.Message = err.Error()
 	_error.Err = err
 	_error.Request = req
-	slog.Error(_error.Error())
-	slog.Debug(_error.Debug())
-	os.Exit(1)
+	log.Debug(_error.Debug())
+	log.Fatal(_error.Error())
 }
 
 func Request(request *PIMRequest, responseModel any) any {
@@ -140,9 +136,8 @@ func Request(request *PIMRequest, responseModel any) any {
 		_error.Err = err
 		_error.Request = req
 		_error.Response = res
-		slog.Error(_error.Error())
-		slog.Debug(_error.Debug())
-		os.Exit(1)
+		log.Debug(_error.Debug())
+		log.Fatal(_error.Error())
 	}
 	defer res.Body.Close()
 
@@ -153,9 +148,8 @@ func Request(request *PIMRequest, responseModel any) any {
 		_error.Err = err
 		_error.Request = req
 		_error.Response = res
-		slog.Error(_error.Error())
-		slog.Debug(_error.Debug())
-		os.Exit(1)
+		log.Debug(_error.Debug())
+		log.Fatal(_error.Error())
 	}
 
 	// Handle upstream error responses
@@ -166,9 +160,8 @@ func Request(request *PIMRequest, responseModel any) any {
 		_error.Err = err
 		_error.Request = req
 		_error.Response = res
-		slog.Error(_error.Error())
-		slog.Debug(_error.Debug())
-		os.Exit(1)
+		log.Debug(_error.Debug())
+		log.Fatal(_error.Error())
 	}
 
 	err = json.Unmarshal(body, responseModel)
@@ -178,9 +171,8 @@ func Request(request *PIMRequest, responseModel any) any {
 		_error.Err = err
 		_error.Request = req
 		_error.Response = res
-		slog.Error(_error.Error())
-		slog.Debug(_error.Debug())
-		os.Exit(1)
+		log.Debug(_error.Debug())
+		log.Fatal(_error.Error())
 	}
 
 	return responseModel
@@ -212,8 +204,7 @@ func (c AzureClient) GetEligibleGovernanceRoleAssignments(roleType string, subje
 			Operation: "GetEligibleGovernanceRoleAssignments",
 			Message:   "Invalid role type specified.",
 		}
-		slog.Error(_error.Error())
-		os.Exit(1)
+		log.Fatal(_error.Error())
 	}
 	var params = map[string]string{
 		"$expand": "linkedEligibleRoleAssignment,subject,scopedResource,roleDefinition($expand=resource)",

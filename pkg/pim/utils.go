@@ -5,10 +5,10 @@ package pim
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/netr0m/az-pim-cli/pkg/common"
 )
@@ -78,16 +78,20 @@ func (response *ResourceAssignmentRequestResponse) CheckResourceAssignmentResult
 			Request:   request,
 			Response:  response,
 		}
-		slog.Error(_error.Error())
-		slog.Debug(_error.Debug())
+		log.Error(_error.Error())
+		log.Debug(_error.Debug())
 		return false
 	}
 	if IsResourceAssignmentRequestOK(response) {
-		slog.Info("The role assignment request was successful", "status", response.Properties.Status)
+		log.WithFields(log.Fields{
+			"status": response.Properties.Status,
+		}).Info("The role assignment request was successful")
 		return true
 	}
 	if IsResourceAssignmentRequestPending(response) {
-		slog.Warn("The role assignment request is pending", "status", response.Properties.Status)
+		log.WithFields(log.Fields{
+			"status": response.Properties.Status,
+		}).Warn("The role assignment request is pending")
 		return true
 	}
 
@@ -103,16 +107,22 @@ func (response *GovernanceRoleAssignmentRequestResponse) CheckGovernanceRoleAssi
 			Request:   request,
 			Response:  response,
 		}
-		slog.Error(_error.Error())
-		slog.Debug(_error.Debug())
+		log.Error(_error.Error())
+		log.Debug(_error.Debug())
 		return false
 	}
 	if IsGovernanceRoleAssignmentRequestOK(response) {
-		slog.Info("The role assignment request was successful", "status", response.Status.Status, "subStatus", response.Status.SubStatus)
+		log.WithFields(log.Fields{
+			"status":    response.Status.Status,
+			"subStatus": response.Status.SubStatus,
+		}).Info("The role assignment request was successful")
 		return true
 	}
 	if IsGovernanceRoleAssignmentRequestPending(response) {
-		slog.Warn("The role assignment request is pending", "status", response.Status.Status, "subStatus", response.Status.SubStatus)
+		log.WithFields(log.Fields{
+			"status":    response.Status.Status,
+			"subStatus": response.Status.SubStatus,
+		}).Warn("The role assignment request is pending")
 		return true
 	}
 
@@ -172,9 +182,8 @@ func CreateResourceAssignmentScheduleInfo(duration int, startDate string, startT
 	if (startDate != "") || (startTime != "") {
 		startDateTime, err := parseDateTime(startDate, startTime)
 		if err != nil {
-			slog.Error(err.Error())
-			slog.Debug(err.Debug())
-			os.Exit(1)
+			log.Debug(err.Debug())
+			log.Fatal(err.Error())
 		}
 		scheduleStart = startDateTime
 	}
@@ -213,9 +222,8 @@ func CreateGovernanceRoleAssignmentScheduleInfo(duration int, startDate string, 
 	if (startDate != "") || (startTime != "") {
 		startDateTime, err := parseDateTime(startDate, startTime)
 		if err != nil {
-			slog.Error(err.Error())
-			slog.Debug(err.Debug())
-			os.Exit(1)
+			log.Debug(err.Debug())
+			log.Fatal(err.Error())
 		}
 		scheduleStart = startDateTime
 	}
@@ -234,8 +242,7 @@ func CreateGovernanceRoleAssignmentRequest(subjectId string, roleType string, go
 			Operation: "CreateGovernanceRoleAssignmentRequest",
 			Message:   "Invalid role type specified.",
 		}
-		slog.Error(_error.Error())
-		os.Exit(1)
+		log.Fatal(_error.Error())
 	}
 
 	scheduleInfo := CreateGovernanceRoleAssignmentScheduleInfo(duration, startDate, startTime)

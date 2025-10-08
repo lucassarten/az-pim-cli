@@ -5,9 +5,9 @@ package utils
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/netr0m/az-pim-cli/pkg/common"
 	"github.com/netr0m/az-pim-cli/pkg/pim"
@@ -17,7 +17,7 @@ func GetEligibleResources(resourceAssignments *pim.ResourceAssignmentResponse) m
 	var eligibleResources = make(map[string][]string)
 
 	for _, ras := range resourceAssignments.Value {
-		slog.Debug(ras.Debug())
+		log.Debug(ras.Debug())
 		resourceName := ras.Properties.ExpandedProperties.Scope.DisplayName
 		roleName := ras.Properties.ExpandedProperties.RoleDefinition.DisplayName
 		if _, ok := eligibleResources[resourceName]; !ok {
@@ -41,7 +41,7 @@ func GetEligibleGovernanceRoles(governanceRoleAssignments *pim.GovernanceRoleAss
 	var eligibleGovernanceRoles = make(map[string][]string)
 
 	for _, governanceRoleAssignment := range governanceRoleAssignments.Value {
-		slog.Debug(governanceRoleAssignment.Debug())
+		log.Debug(governanceRoleAssignment.Debug())
 		governanceRoleName := governanceRoleAssignment.RoleDefinition.Resource.DisplayName
 		roleName := governanceRoleAssignment.RoleDefinition.DisplayName
 		if _, ok := eligibleGovernanceRoles[governanceRoleName]; !ok {
@@ -94,8 +94,7 @@ func GetResourceAssignment(name string, prefix string, role string, eligibleReso
 		Message:   "Unable to find a resource assignment matching the parameters",
 		Status:    "404",
 	}
-	slog.Error(_error.Error())
-	os.Exit(1)
+	log.Fatal(_error.Error())
 
 	return nil
 }
@@ -133,8 +132,7 @@ func GetGovernanceRoleAssignment(name string, prefix string, role string, eligib
 		Message:   "Unable to find a role assignment matching the parameters",
 		Status:    "404",
 	}
-	slog.Error(_error.Error())
-	os.Exit(1)
+	log.Fatal(_error.Error())
 
 	return nil
 }
