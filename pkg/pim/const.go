@@ -22,7 +22,7 @@ const AZ_AUTHORITY string = "https://login.microsoftonline.com/"
 const AZ_PIM_SCOPE string = AZ_PIM_BASE_URL
 
 // Default reason for role activation
-const DEFAULT_REASON string = "config"
+const DEFAULT_REASON string = "Daily PIM"
 
 // Default duration for role activation
 const DEFAULT_DURATION_MINUTES int = 480

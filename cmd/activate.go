@@ -31,22 +31,17 @@ var validateOnly bool
 var resources []string
 var roles []string
 
-var eligibleResourcesTemplate = &promptui.SelectTemplates{
+var selectTemplate = &promptui.SelectTemplates{
 	Active:   `➤ {{ . | cyan }}`,
 	Inactive: `  {{ . | cyan }}`,
 	Selected: `✓ {{ . | green }}`,
 }
 
-var eligibleGovernanceResourcesTemplate = &promptui.SelectTemplates{
-	Active:   `➤ {{ . | cyan }}`,
-	Inactive: `  {{ . | cyan }}`,
-	Selected: `✓ {{ . | green }}`,
-}
-
-var eligibleRolesTemplate = &promptui.SelectTemplates{
-	Active:   `➤ {{ . | cyan }}`,
-	Inactive: `  {{ . | cyan }}`,
-	Selected: `✓ {{ . | green }}`,
+var promptTemplate = &promptui.PromptTemplates{
+	Prompt:  `{{ . }} `,
+	Valid:   `{{ . | cyan }} `,
+	Invalid: `{{ . | red }} `,
+	Success: `✓ {{ . | green }} `,
 }
 
 var activateCmd = &cobra.Command{
@@ -90,7 +85,7 @@ var activateResourceCmd = &cobra.Command{
 			prompt := promptui.Select{
 				Label:             "Select Resource",
 				Items:             resources,
-				Templates:         eligibleResourcesTemplate,
+				Templates:         selectTemplate,
 				Searcher:          resourceSearcher,
 				Size:              10,
 				StartInSearchMode: true,
@@ -108,7 +103,7 @@ var activateResourceCmd = &cobra.Command{
 			rolePrompt := promptui.Select{
 				Label:             "Select Role",
 				Items:             roles,
-				Templates:         eligibleRolesTemplate,
+				Templates:         selectTemplate,
 				Searcher:          roleSearcher,
 				Size:              10,
 				StartInSearchMode: true,
@@ -120,16 +115,29 @@ var activateResourceCmd = &cobra.Command{
 			roleName = eligibleResourceToRoles[name][idxRole]
 		}
 
+		if reason == pim.DEFAULT_REASON {
+			reasonPrompt := promptui.Prompt{
+				Label:   "Reason:",
+				Default: reason,
+				Templates: promptTemplate,
+			}
+			result, err := reasonPrompt.Run()
+			if err != nil {
+				log.Fatalf("Prompt aborted: %s", err.Error())
+			}
+			reason = result
+		}
+
 		resourceAssignment := utils.GetResourceAssignment(name, prefix, roleName, eligibleResourceAssignments)
 		scope, assignmentRequest := pim.CreateResourceAssignmentRequest(subjectId, resourceAssignment, duration, startDate, startTime, reason, ticketSystem, ticketNumber)
 
 		log.WithFields(log.Fields{
-			"role":          resourceAssignment.Properties.ExpandedProperties.RoleDefinition.DisplayName,
-			"scope":         resourceAssignment.Properties.ExpandedProperties.Scope.DisplayName,
-			"reason":        reason,
-			"ticketNumber":  ticketNumber,
-			"ticketSystem":  ticketSystem,
-			"duration":      duration,
+			"role":         resourceAssignment.Properties.ExpandedProperties.RoleDefinition.DisplayName,
+			"scope":        resourceAssignment.Properties.ExpandedProperties.Scope.DisplayName,
+			"reason":       reason,
+			"ticketNumber": ticketNumber,
+			"ticketSystem": ticketSystem,
+			"duration":     duration,
 		}).Info("Requesting activation")
 
 		if dryRun {
@@ -169,7 +177,7 @@ func activateGovernanceRole(roleType string) {
 		prompt := promptui.Select{
 			Label:             "Select Resource",
 			Items:             resources,
-			Templates:         eligibleGovernanceResourcesTemplate,
+			Templates:         selectTemplate,
 			Searcher:          resourceSearcher,
 			Size:              10,
 			StartInSearchMode: true,
@@ -187,7 +195,7 @@ func activateGovernanceRole(roleType string) {
 		rolePrompt := promptui.Select{
 			Label:             "Select Role",
 			Items:             roles,
-			Templates:         eligibleRolesTemplate,
+			Templates:         selectTemplate,
 			Searcher:          roleSearcher,
 			Size:              10,
 			StartInSearchMode: true,
@@ -199,16 +207,29 @@ func activateGovernanceRole(roleType string) {
 		roleName = eligibleResourceToRoles[name][idxRole]
 	}
 
+	if reason == pim.DEFAULT_REASON {
+		reasonPrompt := promptui.Prompt{
+			Label:   "Reason:",
+			Default: reason,
+			Templates: promptTemplate,
+		}
+		result, err := reasonPrompt.Run()
+		if err != nil {
+			log.Fatalf("Prompt aborted: %s", err.Error())
+		}
+		reason = result
+	}
+
 	roleAssignment := utils.GetGovernanceRoleAssignment(name, prefix, roleName, eligibleAssignments)
 	roleType, assignmentRequest := pim.CreateGovernanceRoleAssignmentRequest(subjectId, roleType, roleAssignment, duration, startDate, startTime, reason, ticketSystem, ticketNumber)
 
 	log.WithFields(log.Fields{
-		"role":          roleAssignment.RoleDefinition.DisplayName,
-		"scope":         roleAssignment.RoleDefinition.Resource.DisplayName,
-		"reason":        reason,
-		"ticketNumber":  ticketNumber,
-		"ticketSystem":  ticketSystem,
-		"duration":      duration,
+		"role":         roleAssignment.RoleDefinition.DisplayName,
+		"scope":        roleAssignment.RoleDefinition.Resource.DisplayName,
+		"reason":       reason,
+		"ticketNumber": ticketNumber,
+		"ticketSystem": ticketSystem,
+		"duration":     duration,
 	}).Info("Requesting activation")
 
 	if dryRun {
